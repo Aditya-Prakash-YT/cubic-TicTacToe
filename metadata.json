@@ -1,0 +1,5 @@
+{
+  "name": "Neon 3D Tic-Tac-Toe",
+  "description": "A futuristic 3x3x3 Tic-Tac-Toe game where you play across three dimensions. Challenge a friend in this strategic layer-based puzzle.",
+  "requestFramePermissions": []
+}
