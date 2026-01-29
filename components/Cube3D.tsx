@@ -6,9 +6,10 @@ interface Cube3DProps {
   board: BoardState;
   winningLine: number[] | null;
   mousePos: { x: number; y: number };
+  hoveredIndex?: number | null;
 }
 
-export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos }) => {
+export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos, hoveredIndex }) => {
   // Spacing between cells in pixels for the 3D projection
   const SPACING = 60;
   
@@ -29,6 +30,7 @@ export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos }) 
         {board.map((cell, index) => {
           const { x, y, z } = getCoords(index);
           const isWinning = winningLine?.includes(index);
+          const isHovered = hoveredIndex === index;
 
           const tx = (x - 1) * SPACING;
           // Invert Z visually so layer 0 is at bottom
@@ -39,8 +41,8 @@ export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos }) 
             <div
               key={index}
               className={`absolute flex items-center justify-center transform-style-3d backface-visible transition-all duration-500
-                ${cell ? 'opacity-100' : 'opacity-20'}
-                ${isWinning ? 'scale-125 z-50' : 'scale-100'}
+                ${cell ? 'opacity-100' : (isHovered ? 'opacity-50' : 'opacity-20')}
+                ${isWinning ? 'scale-125 z-50' : (isHovered ? 'scale-110 z-40' : 'scale-100')}
               `}
               style={{
                 width: '40px',
@@ -61,7 +63,7 @@ export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos }) 
                   {cell}
                 </div>
               ) : (
-                <div className="w-2 h-2 rounded-full bg-slate-500/50" />
+                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isHovered ? 'bg-white shadow-[0_0_10px_white] scale-150' : 'bg-slate-500/50'}`} />
               )}
             </div>
           );

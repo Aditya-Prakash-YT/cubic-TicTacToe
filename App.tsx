@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GameState } from './types';
+import { GameState, Player } from './types';
 import { checkWinner, checkDraw } from './utils/gameLogic';
 import { Layer } from './components/Layer';
 import { Cube3D } from './components/Cube3D';
-import { RefreshCcw, Trophy, Box, Hand } from 'lucide-react';
+import { RefreshCcw, Trophy, Box, Hand, Swords } from 'lucide-react';
+import { playSound } from './utils/sound';
 
 const INITIAL_STATE: GameState = {
   board: Array(27).fill(null),
@@ -14,16 +15,29 @@ const INITIAL_STATE: GameState = {
 
 function App() {
   const [game, setGame] = useState<GameState>(INITIAL_STATE);
+  const [scores, setScores] = useState<{ X: number; O: number }>({ X: 0, O: 0 });
   const [lastMoveIndex, setLastMoveIndex] = useState<number | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<number | null>(null);
 
   const handleCellClick = (index: number) => {
-    if (game.board[index] || game.winner) return;
+    // Prevent move if cell is already occupied or game is over
+    if (game.board[index] !== null || game.winner) return;
 
     const newBoard = [...game.board];
     newBoard[index] = game.currentPlayer;
+    
+    // Play move sound
+    playSound(game.currentPlayer === 'X' ? 'move-x' : 'move-o');
 
     const { winner, line } = checkWinner(newBoard);
     const isDraw = !winner && checkDraw(newBoard);
+
+    if (winner) {
+        setScores(prev => ({ ...prev, [winner as Player]: prev[winner as Player] + 1 }));
+        setTimeout(() => playSound('win'), 200);
+    } else if (isDraw) {
+        setTimeout(() => playSound('draw'), 200);
+    }
 
     setLastMoveIndex(index);
     setGame({
@@ -34,7 +48,17 @@ function App() {
     });
   };
 
+  const handleCellHover = (index: number | null) => {
+      if (index !== hoveredCell) {
+          if (index !== null && !game.board[index] && !game.winner) {
+             playSound('hover');
+          }
+          setHoveredCell(index);
+      }
+  };
+
   const resetGame = () => {
+    playSound('reset');
     setGame(INITIAL_STATE);
     setLastMoveIndex(null);
   };
@@ -106,6 +130,7 @@ function App() {
                board={game.board} 
                winningLine={game.winningLine} 
                mousePos={mousePos}
+               hoveredIndex={hoveredCell}
              />
              
              <div className="absolute bottom-4 left-0 right-0 text-center text-slate-500/50 text-[10px] sm:text-xs flex items-center justify-center gap-2 pointer-events-none">
@@ -116,11 +141,14 @@ function App() {
              </div>
            </div>
 
-           {/* Game Status Bar (Players) - Moved Here */}
+           {/* Game Status Bar (Players) */}
            <div className="w-full flex items-center justify-center gap-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-700/50 backdrop-blur-sm shadow-xl">
               <div className={`flex flex-1 flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 ${game.currentPlayer === 'X' && !game.winner ? 'bg-cyan-950/40 border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)] scale-105' : 'opacity-50 grayscale scale-95'}`}>
                  <span className="text-4xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">X</span>
                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-200/70">Player 1</span>
+                 <div className="text-xs font-mono text-cyan-400 bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-500/30 mt-1 shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+                    WINS: {scores.X}
+                 </div>
               </div>
               
               <div className="h-12 w-[1px] bg-slate-700/50"></div>
@@ -128,6 +156,9 @@ function App() {
               <div className={`flex flex-1 flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 ${game.currentPlayer === 'O' && !game.winner ? 'bg-rose-950/40 border border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.15)] scale-105' : 'opacity-50 grayscale scale-95'}`}>
                  <span className="text-4xl font-black text-rose-400 drop-shadow-[0_0_10px_rgba(251,113,133,0.5)]">O</span>
                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-rose-200/70">Player 2</span>
+                 <div className="text-xs font-mono text-rose-400 bg-rose-950/50 px-3 py-1 rounded-full border border-rose-500/30 mt-1 shadow-[0_0_10px_rgba(251,113,133,0.2)]">
+                    WINS: {scores.O}
+                 </div>
               </div>
            </div>
         </div>
@@ -138,7 +169,7 @@ function App() {
           {/* Interactive Layers - Container Box */}
           <div className="w-full relative group bg-slate-900/30 rounded-[2rem] p-4 sm:p-8 border border-slate-800/60 shadow-2xl backdrop-blur-sm">
              <div className="absolute top-4 left-6 text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em] hidden md:block">
-               Tactical Layer Interface
+               Tactical Layer Interface (Y-Axis Slices)
              </div>
 
              {/* Mobile Scroll Hint - Left Fade */}
@@ -160,12 +191,17 @@ function App() {
                     perspective: '1000px'
                 }}
             >
+                {/* 
+                  Layers 0, 1, 2 correspond to Y coordinates (Depth). 
+                  Y=0 (Back), Y=1 (Middle), Y=2 (Front)
+                */}
                 {[0, 1, 2].map((layerIdx) => (
                 <Layer
                     key={layerIdx}
                     layerIndex={layerIdx}
                     board={game.board}
                     onCellClick={handleCellClick}
+                    onCellHover={handleCellHover}
                     winningLine={game.winningLine}
                     disabled={!!game.winner}
                     lastMoveIndex={lastMoveIndex}
@@ -198,8 +234,8 @@ function App() {
                   onClick={resetGame}
                   className="w-full group flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-slate-200 text-slate-950 rounded-2xl font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]"
                 >
-                  <RefreshCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-                  PLAY AGAIN
+                  <Swords className="w-5 h-5 group-hover:rotate-12 transition-transform duration-500" />
+                  REMATCH
                 </button>
               </div>
             ) : (
