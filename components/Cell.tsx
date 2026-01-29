@@ -1,5 +1,5 @@
 import React from 'react';
-import { CellValue } from '../types';
+import { CellValue, Theme } from '../types';
 
 interface CellProps {
   value: CellValue;
@@ -9,6 +9,7 @@ interface CellProps {
   isLastMove?: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  theme: Theme;
 }
 
 export const Cell: React.FC<CellProps> = ({ 
@@ -18,25 +19,29 @@ export const Cell: React.FC<CellProps> = ({
   disabled, 
   isLastMove,
   onMouseEnter,
-  onMouseLeave
+  onMouseLeave,
+  theme
 }) => {
   // Styles for the cell based on state
   const baseClasses = "w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center text-2xl sm:text-3xl font-bold rounded-md transition-all duration-300 border-2 shadow-[0_0_10px_rgba(0,0,0,0.2)]";
   
   let colorClasses = "bg-slate-800 border-slate-700 hover:bg-slate-700 cursor-pointer";
   
+  const xColor = theme.colors.X;
+  const oColor = theme.colors.O;
+
   if (value === 'X') {
-    colorClasses = "bg-slate-800 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)] cursor-not-allowed";
+    colorClasses = `bg-slate-800 border-${xColor}-500 text-${xColor}-400 shadow-[0_0_15px] shadow-${xColor}-500/50 cursor-not-allowed`;
   } else if (value === 'O') {
-    colorClasses = "bg-slate-800 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(251,113,133,0.4)] cursor-not-allowed";
+    colorClasses = `bg-slate-800 border-${oColor}-500 text-${oColor}-400 shadow-[0_0_15px] shadow-${oColor}-500/50 cursor-not-allowed`;
   }
 
   if (isWinningCell) {
     // Override for winner
     if (value === 'X') {
-        colorClasses = "bg-cyan-900/50 border-cyan-400 text-cyan-100 scale-110 shadow-[0_0_20px_rgba(34,211,238,0.8)] z-10 cursor-default";
+        colorClasses = `bg-${xColor}-900/50 border-${xColor}-400 text-${xColor}-100 scale-110 shadow-[0_0_20px] shadow-${xColor}-400 z-10 cursor-default`;
     } else {
-        colorClasses = "bg-rose-900/50 border-rose-400 text-rose-100 scale-110 shadow-[0_0_20px_rgba(251,113,133,0.8)] z-10 cursor-default";
+        colorClasses = `bg-${oColor}-900/50 border-${oColor}-400 text-${oColor}-100 scale-110 shadow-[0_0_20px] shadow-${oColor}-400 z-10 cursor-default`;
     }
   } else if (disabled && !value) {
     colorClasses = "bg-slate-900 border-slate-800 cursor-not-allowed opacity-50";

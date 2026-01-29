@@ -1,5 +1,5 @@
 import React from 'react';
-import { BoardState } from '../types';
+import { BoardState, Theme } from '../types';
 import { Cell } from './Cell';
 import { getIndex } from '../utils/gameLogic';
 
@@ -11,6 +11,7 @@ interface LayerProps {
   winningLine: number[] | null;
   disabled: boolean;
   lastMoveIndex: number | null;
+  theme: Theme;
 }
 
 export const Layer: React.FC<LayerProps> = ({ 
@@ -20,7 +21,8 @@ export const Layer: React.FC<LayerProps> = ({
   onCellHover,
   winningLine, 
   disabled,
-  lastMoveIndex
+  lastMoveIndex,
+  theme
 }) => {
   // Layer Labels for Y-axis slices
   // Y=0: Back, Y=1: Middle, Y=2: Front (based on standard right-handed coords often used, or CSS perspective)
@@ -53,6 +55,7 @@ export const Layer: React.FC<LayerProps> = ({
             isWinningCell={isWinningCell}
             disabled={disabled || board[index] !== null}
             isLastMove={lastMoveIndex === index}
+            theme={theme}
           />
         );
       }

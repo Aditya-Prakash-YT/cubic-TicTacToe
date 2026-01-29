@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GameState, Player } from './types';
+import { GameState, Player, Theme } from './types';
 import { checkWinner, checkDraw } from './utils/gameLogic';
 import { Layer } from './components/Layer';
 import { Cube3D } from './components/Cube3D';
-import { RefreshCcw, Trophy, Box, Hand, Swords } from 'lucide-react';
+import { RefreshCcw, Trophy, Box, Hand, Swords, Palette } from 'lucide-react';
 import { playSound } from './utils/sound';
+
+const THEMES: Theme[] = [
+  { name: 'Neon City', colors: { X: 'cyan', O: 'rose' } },
+  { name: 'Matrix', colors: { X: 'green', O: 'purple' } },
+  { name: 'Sunset', colors: { X: 'amber', O: 'violet' } },
+  { name: 'Ocean', colors: { X: 'sky', O: 'emerald' } },
+];
 
 const INITIAL_STATE: GameState = {
   board: Array(27).fill(null),
@@ -18,6 +25,8 @@ function App() {
   const [scores, setScores] = useState<{ X: number; O: number }>({ X: 0, O: 0 });
   const [lastMoveIndex, setLastMoveIndex] = useState<number | null>(null);
   const [hoveredCell, setHoveredCell] = useState<number | null>(null);
+  const [currentTheme, setCurrentTheme] = useState<Theme>(THEMES[0]);
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
   const handleCellClick = (index: number) => {
     // Prevent move if cell is already occupied or game is over
@@ -97,17 +106,49 @@ function App() {
     setMousePos({ x, y });
   };
 
+  const xColor = currentTheme.colors.X;
+  const oColor = currentTheme.colors.O;
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0f172a] to-black text-white overflow-x-hidden font-sans">
       
       {/* Header */}
-      <header className="text-center space-y-1 z-10 pt-8 pb-4 px-4">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-rose-400 drop-shadow-2xl">
+      <header className="relative w-full text-center space-y-1 z-10 pt-8 pb-4 px-4 flex flex-col items-center">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-200 via-white to-slate-200 drop-shadow-2xl">
           CUBIC TIC-TAC-TOE
         </h1>
         <p className="text-slate-400 text-xs sm:text-sm max-w-md mx-auto leading-relaxed tracking-wide">
           ROW, COLUMN, STACK, OR 3D DIAGONAL.
         </p>
+
+        {/* Theme Toggle Button */}
+        <button 
+          onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+          className="absolute right-4 top-8 p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-slate-500 transition-colors"
+          aria-label="Customize Theme"
+        >
+           <Palette className="w-5 h-5 text-slate-300" />
+        </button>
+
+        {/* Theme Menu */}
+        {isThemeMenuOpen && (
+          <div className="absolute top-20 right-4 z-50 bg-slate-900/95 border border-slate-700 p-4 rounded-xl shadow-2xl flex flex-col gap-3 backdrop-blur-xl animate-in fade-in slide-in-from-top-2">
+             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1 text-center">Select Theme</span>
+             {THEMES.map((theme) => (
+               <button
+                 key={theme.name}
+                 onClick={() => { setCurrentTheme(theme); setIsThemeMenuOpen(false); }}
+                 className={`flex items-center gap-3 p-2 rounded-lg transition-all ${currentTheme.name === theme.name ? 'bg-slate-800 ring-1 ring-slate-500' : 'hover:bg-slate-800/50'}`}
+               >
+                 <div className="flex gap-1">
+                    <div className={`w-4 h-4 rounded-full bg-${theme.colors.X}-400 shadow-[0_0_8px] shadow-${theme.colors.X}-500/50`}></div>
+                    <div className={`w-4 h-4 rounded-full bg-${theme.colors.O}-400 shadow-[0_0_8px] shadow-${theme.colors.O}-500/50`}></div>
+                 </div>
+                 <span className="text-sm font-medium text-slate-300">{theme.name}</span>
+               </button>
+             ))}
+          </div>
+        )}
       </header>
 
       {/* Main Content Area */}
@@ -131,6 +172,7 @@ function App() {
                winningLine={game.winningLine} 
                mousePos={mousePos}
                hoveredIndex={hoveredCell}
+               theme={currentTheme}
              />
              
              <div className="absolute bottom-4 left-0 right-0 text-center text-slate-500/50 text-[10px] sm:text-xs flex items-center justify-center gap-2 pointer-events-none">
@@ -143,20 +185,20 @@ function App() {
 
            {/* Game Status Bar (Players) */}
            <div className="w-full flex items-center justify-center gap-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-700/50 backdrop-blur-sm shadow-xl">
-              <div className={`flex flex-1 flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 ${game.currentPlayer === 'X' && !game.winner ? 'bg-cyan-950/40 border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)] scale-105' : 'opacity-50 grayscale scale-95'}`}>
-                 <span className="text-4xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">X</span>
-                 <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-200/70">Player 1</span>
-                 <div className="text-xs font-mono text-cyan-400 bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-500/30 mt-1 shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+              <div className={`flex flex-1 flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 ${game.currentPlayer === 'X' && !game.winner ? `bg-${xColor}-950/40 border border-${xColor}-500/30 shadow-[0_0_20px] shadow-${xColor}-500/15 scale-105` : 'opacity-50 grayscale scale-95'}`}>
+                 <span className={`text-4xl font-black text-${xColor}-400 drop-shadow-[0_0_10px_currentColor]`}>X</span>
+                 <span className={`text-[10px] uppercase tracking-[0.2em] font-bold text-${xColor}-200/70`}>Player 1</span>
+                 <div className={`text-xs font-mono text-${xColor}-400 bg-${xColor}-950/50 px-3 py-1 rounded-full border border-${xColor}-500/30 mt-1 shadow-[0_0_10px] shadow-${xColor}-500/20`}>
                     WINS: {scores.X}
                  </div>
               </div>
               
               <div className="h-12 w-[1px] bg-slate-700/50"></div>
 
-              <div className={`flex flex-1 flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 ${game.currentPlayer === 'O' && !game.winner ? 'bg-rose-950/40 border border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.15)] scale-105' : 'opacity-50 grayscale scale-95'}`}>
-                 <span className="text-4xl font-black text-rose-400 drop-shadow-[0_0_10px_rgba(251,113,133,0.5)]">O</span>
-                 <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-rose-200/70">Player 2</span>
-                 <div className="text-xs font-mono text-rose-400 bg-rose-950/50 px-3 py-1 rounded-full border border-rose-500/30 mt-1 shadow-[0_0_10px_rgba(251,113,133,0.2)]">
+              <div className={`flex flex-1 flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 ${game.currentPlayer === 'O' && !game.winner ? `bg-${oColor}-950/40 border border-${oColor}-500/30 shadow-[0_0_20px] shadow-${oColor}-500/15 scale-105` : 'opacity-50 grayscale scale-95'}`}>
+                 <span className={`text-4xl font-black text-${oColor}-400 drop-shadow-[0_0_10px_currentColor]`}>O</span>
+                 <span className={`text-[10px] uppercase tracking-[0.2em] font-bold text-${oColor}-200/70`}>Player 2</span>
+                 <div className={`text-xs font-mono text-${oColor}-400 bg-${oColor}-950/50 px-3 py-1 rounded-full border border-${oColor}-500/30 mt-1 shadow-[0_0_10px] shadow-${oColor}-500/20`}>
                     WINS: {scores.O}
                  </div>
               </div>
@@ -205,6 +247,7 @@ function App() {
                     winningLine={game.winningLine}
                     disabled={!!game.winner}
                     lastMoveIndex={lastMoveIndex}
+                    theme={currentTheme}
                 />
                 ))}
             </div>
@@ -223,8 +266,8 @@ function App() {
                      <span className="text-slate-300">It's a Draw!</span>
                    ) : (
                      <>
-                       <Trophy className={`w-8 h-8 ${game.winner === 'X' ? 'text-cyan-400' : 'text-rose-400'}`} />
-                       <span className={game.winner === 'X' ? 'text-cyan-400' : 'text-rose-400'}>
+                       <Trophy className={`w-8 h-8 ${game.winner === 'X' ? `text-${xColor}-400` : `text-${oColor}-400`}`} />
+                       <span className={game.winner === 'X' ? `text-${xColor}-400` : `text-${oColor}-400`}>
                          PLAYER {game.winner} WINS!
                        </span>
                      </>

@@ -1,3 +1,4 @@
+
 export type Player = 'X' | 'O';
 export type CellValue = Player | null;
 
@@ -18,4 +19,12 @@ export interface GameState {
   currentPlayer: Player;
   winner: Player | 'Draw' | null;
   winningLine: number[] | null; // Indices of the winning cells
+}
+
+export interface Theme {
+  name: string;
+  colors: {
+    X: string;
+    O: string;
+  };
 }

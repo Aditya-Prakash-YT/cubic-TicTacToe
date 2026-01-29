@@ -1,5 +1,5 @@
 import React from 'react';
-import { BoardState } from '../types';
+import { BoardState, Theme } from '../types';
 import { getCoords } from '../utils/gameLogic';
 
 interface Cube3DProps {
@@ -7,15 +7,19 @@ interface Cube3DProps {
   winningLine: number[] | null;
   mousePos: { x: number; y: number };
   hoveredIndex?: number | null;
+  theme: Theme;
 }
 
-export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos, hoveredIndex }) => {
+export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos, hoveredIndex, theme }) => {
   // Spacing between cells in pixels for the 3D projection
   const SPACING = 60;
   
   // Base rotation plus mouse influence
   const rotateX = -15 + (mousePos.y * -20);
   const rotateY = 45 + (mousePos.x * 20);
+
+  const xColor = theme.colors.X;
+  const oColor = theme.colors.O;
 
   return (
     <div className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] xl:w-[400px] xl:h-[400px] flex items-center justify-center perspective-[1200px] touch-none">
@@ -54,10 +58,10 @@ export const Cube3D: React.FC<Cube3DProps> = ({ board, winningLine, mousePos, ho
             >
               {cell ? (
                 <div className={`
-                   w-10 h-10 flex items-center justify-center text-2xl font-black border-2 rounded-lg shadow-[0_0_15px_currentColor] backdrop-blur-sm
+                   w-10 h-10 flex items-center justify-center text-2xl font-black border-2 rounded-lg backdrop-blur-sm
                    ${cell === 'X' 
-                      ? 'text-cyan-400 border-cyan-500 bg-cyan-900/30' 
-                      : 'text-rose-400 border-rose-500 bg-rose-900/30'}
+                      ? `text-${xColor}-400 border-${xColor}-500 bg-${xColor}-900/30 shadow-[0_0_15px] shadow-${xColor}-500/50` 
+                      : `text-${oColor}-400 border-${oColor}-500 bg-${oColor}-900/30 shadow-[0_0_15px] shadow-${oColor}-500/50`}
                    ${isWinning ? 'animate-pulse shadow-[0_0_30px_currentColor] border-white' : ''}
                 `}>
                   {cell}
